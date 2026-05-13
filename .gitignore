@@ -6,3 +6,4 @@ runs/
 export/
 *.pt
 uv.lock
+.env
