@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REMOTE="${R2_REMOTE_NAME:-r2}"
-BUCKET="tcg-cards"
+BUCKET="tcg-assets"
 DEST="${1:-data/sources/cards}"
 SAMPLE_N="${2:-20000}"
 
