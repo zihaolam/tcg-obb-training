@@ -17,6 +17,9 @@ export = [
     "onnx>=1.16.0",
     "onnxslim>=0.1.34",
     "onnxruntime>=1.17.0",
+    # onnx>=1.18 needs the float4 dtype from ml_dtypes 0.5+. TF pins it to <0.5,
+    # so old TF installs in the same venv break ONNX export.
+    "ml_dtypes>=0.5.0",
 ]
 
 # TFJS export is brittle (TF + TF-DF + protobuf version conflicts on 3.12).
