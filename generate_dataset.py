@@ -166,8 +166,8 @@ def generate_one(task):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--cards-dir", type=Path, required=True)
-    p.add_argument("--backgrounds-dir", type=Path, required=True)
+    p.add_argument("--cards-dir", type=Path, default="data/sources/cards")
+    p.add_argument("--backgrounds-dir", type=Path, default="data/sources/backgrounds")
     p.add_argument("--output-dir", type=Path, default=Path("data"))
     p.add_argument("--num-train", type=int, default=20000)
     p.add_argument("--num-val", type=int, default=2000)
