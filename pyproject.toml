@@ -23,13 +23,21 @@ export = [
 ]
 
 # TFJS export is brittle (TF + TF-DF + protobuf version conflicts on 3.12).
-# Install separately only if you actually need TFJS:
-#   uv sync --extra export --extra export-tfjs
+# Install separately only if you actually need TFJS — never alongside `export`:
+#   uv sync --extra export-tfjs
 # Requires Python 3.11 in practice today.
 export-tfjs = [
     "tensorflow>=2.16.0,<2.20.0",
     "tensorflowjs>=4.20.0",
     "tensorflow_decision_forests<1.10",
+]
+
+# `export` (needs ml_dtypes>=0.5) and `export-tfjs` (TF pins ml_dtypes<0.4) are
+# mutually exclusive. Tell uv so it resolves them in separate environments
+# instead of trying to satisfy both at once.
+[tool.uv]
+conflicts = [
+    [{ extra = "export" }, { extra = "export-tfjs" }],
 ]
 
 # For CUDA torch, add to pyproject.toml *before* `uv sync`:
