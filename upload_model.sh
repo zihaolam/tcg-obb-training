@@ -1,50 +1,49 @@
 #!/usr/bin/env bash
-# Upload trained model artifacts to R2 under tcg-models/ptcg-detector-yolo-obb-v2/.
-# Uploads BOTH the TFJS export (for browser/Bun) and the PyTorch weights (for Python).
+# Upload all trained model artifacts to R2 under tcg-models/ptcg-detector-yolo-obb-v2/.
+# Expects `export_model.py` to have run, populating ./export/{pytorch,onnx,tfjs}.
 #
-# Layout in R2:
-#   tcg-models/ptcg-detector-yolo-obb-v2/tfjs/    model.json + *.bin shards
-#   tcg-models/ptcg-detector-yolo-obb-v2/pytorch/ best.pt + args.yaml + results.png
+# Layout in R2 mirrors local:
+#   tcg-models/ptcg-detector-yolo-obb-v2/pytorch/best.pt
+#   tcg-models/ptcg-detector-yolo-obb-v2/onnx/best.onnx
+#   tcg-models/ptcg-detector-yolo-obb-v2/tfjs/{model.json, *.bin}
 set -euo pipefail
 
 REMOTE="${R2_REMOTE_NAME:-r2}"
 BUCKET="tcg-models"
 PREFIX="ptcg-detector-yolo-obb-v2"
+SRC="${1:-export}"
 
-TFJS_SRC="${TFJS_SRC:-export/tfjs}"
-RUN_DIR="${RUN_DIR:-runs/obb/runs/obb/train-3}"
-
-# --- TFJS export -----------------------------------------------------------
-if [ -d "$TFJS_SRC" ] && [ -f "${TFJS_SRC}/model.json" ]; then
-    echo "=== uploading TFJS export: ${TFJS_SRC} -> ${REMOTE}:${BUCKET}/${PREFIX}/tfjs"
-    ls -lh "$TFJS_SRC"
-    rclone copy "$TFJS_SRC" "${REMOTE}:${BUCKET}/${PREFIX}/tfjs" \
-        --transfers 8 --checkers 16 --progress
-    echo
-else
-    echo "skipping TFJS (no '${TFJS_SRC}/model.json'). Run export_tfjs.py to create it."
-    echo
+if [ ! -d "$SRC" ]; then
+    echo "error: '${SRC}' not found. Run export_model.py first." >&2
+    exit 1
 fi
 
-# --- PyTorch weights -------------------------------------------------------
-if [ -f "${RUN_DIR}/weights/best.pt" ]; then
-    echo "=== uploading PyTorch weights from ${RUN_DIR} -> ${REMOTE}:${BUCKET}/${PREFIX}/pytorch"
-    # best.pt is the required one; args.yaml + results.png are nice-to-haves
-    rclone copy "${RUN_DIR}/weights/best.pt" \
-        "${REMOTE}:${BUCKET}/${PREFIX}/pytorch" \
-        --progress
-    for opt in args.yaml results.png results.csv; do
-        if [ -f "${RUN_DIR}/${opt}" ]; then
-            rclone copy "${RUN_DIR}/${opt}" \
-                "${REMOTE}:${BUCKET}/${PREFIX}/pytorch" \
-                --progress
-        fi
-    done
-    echo
-else
-    echo "skipping PyTorch (no '${RUN_DIR}/weights/best.pt')."
-    echo "  set RUN_DIR=path/to/run env var if your run is elsewhere."
-    echo
+uploaded_any=0
+
+upload_subdir() {
+    local subdir="$1"
+    local expected_file="$2"
+    local path="${SRC}/${subdir}"
+    if [ -d "$path" ] && [ -f "${path}/${expected_file}" ]; then
+        echo "=== ${subdir}: ${path} -> ${REMOTE}:${BUCKET}/${PREFIX}/${subdir}"
+        ls -lh "$path"
+        rclone copy "$path" "${REMOTE}:${BUCKET}/${PREFIX}/${subdir}" \
+            --transfers 8 --checkers 16 --progress
+        echo
+        uploaded_any=1
+    else
+        echo "skipping ${subdir} (missing ${path}/${expected_file})"
+        echo
+    fi
+}
+
+upload_subdir "pytorch" "best.pt"
+upload_subdir "onnx"    "best.onnx"
+upload_subdir "tfjs"    "model.json"
+
+if [ "$uploaded_any" -eq 0 ]; then
+    echo "error: nothing uploaded — did export_model.py produce any output?" >&2
+    exit 1
 fi
 
 echo "done. Verify with:"
