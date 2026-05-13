@@ -4,7 +4,7 @@ The Bun worker (backend/src/card/CardImageOBBWorker.ts) loads the exported
 model with `tf.loadGraphModel` from `model.json` plus the shard `.bin` files.
 After export, upload the contents of --output-dir to:
 
-    s3://tcg-models/ptcg-detector-yolo-obb/
+    s3://tcg-models/ptcg-detector-yolo-obb-v2/
 
 Install the export-only deps first:
 
@@ -34,7 +34,7 @@ def main():
     shutil.copytree(exported, args.output_dir)
 
     print(f"exported to {args.output_dir}")
-    print("upload these to s3://tcg-models/ptcg-detector-yolo-obb/:")
+    print("upload these to s3://tcg-models/ptcg-detector-yolo-obb-v2/:")
     for f in sorted(args.output_dir.iterdir()):
         print(f"  {f.name}")
 
