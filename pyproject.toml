@@ -14,14 +14,19 @@ dependencies = [
 # TFJS + ONNX export pulls heavy deps. Install on demand:
 #   uv sync --extra export
 export = [
-    "tensorflow>=2.16.0,<2.20.0",
-    "tensorflowjs>=4.20.0",
-    # Pin TF-DF below 1.10 — newer versions ship protobuf 6.x gencode, which is
-    # incompatible with the protobuf 5.x runtime that TF still pins.
-    "tensorflow_decision_forests<1.10",
     "onnx>=1.16.0",
     "onnxslim>=0.1.34",
     "onnxruntime>=1.17.0",
+]
+
+# TFJS export is brittle (TF + TF-DF + protobuf version conflicts on 3.12).
+# Install separately only if you actually need TFJS:
+#   uv sync --extra export --extra export-tfjs
+# Requires Python 3.11 in practice today.
+export-tfjs = [
+    "tensorflow>=2.16.0,<2.20.0",
+    "tensorflowjs>=4.20.0",
+    "tensorflow_decision_forests<1.10",
 ]
 
 # For CUDA torch, add to pyproject.toml *before* `uv sync`:
