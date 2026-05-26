@@ -105,3 +105,45 @@ Override the upload prefix if needed:
 ```bash
 POSE_MODEL_PREFIX=ptcg-detector-yolo-pose-v2 ./pose/upload_model.sh export/pose
 ```
+
+## Saving Training Checkpoints From Ephemeral Pods
+
+Use this before shutting down a pod, or after a long run reaches a useful
+epoch. Upload the whole YOLO run directory, not just `best.pt`, so resume has
+`weights/last.pt` and the run metadata:
+
+```bash
+cd /tcg-obb-training
+
+# Use a specific checkpoint name like train-1, train-2, train-3, etc.
+./pose/upload_checkpoint.sh \
+  /tcg-obb-training/runs/pose/runs/pose/train-2 \
+  train-2
+```
+
+On a fresh pod, restore it to the same path and resume:
+
+```bash
+cd /tcg-obb-training
+
+./pose/download_checkpoint.sh \
+  train-2 \
+  /tcg-obb-training/runs/pose/runs/pose/train-2
+
+nohup uv run python pose/train.py \
+  --model /tcg-obb-training/runs/pose/runs/pose/train-2/weights/last.pt \
+  --resume \
+  > train_pose_resume.log 2>&1 &
+```
+
+The training dataset still needs to exist at the path stored in `args.yaml`,
+usually `data/pose/dataset.yaml`. Re-run the source download and
+`pose/generate_dataset.py` first if the fresh pod does not have it.
+
+To restore another checkpoint, change both instances of the name:
+
+```bash
+./pose/download_checkpoint.sh train-1 /tcg-obb-training/runs/pose/runs/pose/train-1
+./pose/download_checkpoint.sh train-2 /tcg-obb-training/runs/pose/runs/pose/train-2
+./pose/download_checkpoint.sh train-3 /tcg-obb-training/runs/pose/runs/pose/train-3
+```

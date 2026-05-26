@@ -61,6 +61,45 @@ RunPod instances.
 The generator defaults to `--min-cards 1 --max-cards 3`, so the model sees
 multi-card scenes. Set both to `1` if you want single-card-only training.
 
+## Checkpoint Upload For Resume
+
+On ephemeral pods, upload the YOLO run directory before shutting the pod down:
+
+```bash
+cd /tcg-obb-training
+
+./pose/upload_checkpoint.sh \
+  /tcg-obb-training/runs/pose/runs/pose/train-2 \
+  train-2
+```
+
+Restore and resume on a new pod:
+
+```bash
+cd /tcg-obb-training
+
+./pose/download_checkpoint.sh \
+  train-2 \
+  /tcg-obb-training/runs/pose/runs/pose/train-2
+
+nohup uv run python pose/train.py \
+  --model /tcg-obb-training/runs/pose/runs/pose/train-2/weights/last.pt \
+  --resume \
+  > train_pose_resume.log 2>&1 &
+```
+
+The dataset path from the original run must exist before resume. If the pod is
+fresh, download sources and regenerate `data/pose` first.
+
+Checkpoint names are explicit. Use the matching name and destination when
+switching between runs:
+
+```bash
+./pose/download_checkpoint.sh train-1 /tcg-obb-training/runs/pose/runs/pose/train-1
+./pose/download_checkpoint.sh train-2 /tcg-obb-training/runs/pose/runs/pose/train-2
+./pose/download_checkpoint.sh train-3 /tcg-obb-training/runs/pose/runs/pose/train-3
+```
+
 ## Label Format
 
 ```text
