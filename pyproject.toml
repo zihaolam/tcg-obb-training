@@ -1,9 +1,11 @@
 [project]
-name = "ptcg-obb-training"
+name = "ptcg-card-training"
 version = "0.1.0"
-description = "Synthetic dataset generation and YOLO-OBB training for Pokémon TCG card detection"
+description = "Synthetic dataset generation and YOLO training for Pokemon TCG card detection"
 requires-python = ">=3.10,<3.13"
 dependencies = [
+    "torch==2.8.0",
+    "torchvision==0.23.0",
     "ultralytics>=8.3.0",
     "opencv-python>=4.10.0",
     "numpy>=1.26.0",
@@ -11,6 +13,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Web tester for inspecting model predictions interactively.
+#   uv sync --extra serve
+serve = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.27.0",
+    "python-multipart>=0.0.9",
+]
+
 # TFJS + ONNX export pulls heavy deps. Install on demand:
 #   uv sync --extra export
 export = [
@@ -40,13 +50,13 @@ conflicts = [
     [{ extra = "export" }, { extra = "export-tfjs" }],
 ]
 
-# For CUDA torch, add to pyproject.toml *before* `uv sync`:
-#
-#   [[tool.uv.index]]
-#   name = "pytorch-cu121"
-#   url = "https://download.pytorch.org/whl/cu121"
-#   explicit = true
-#
-#   [tool.uv.sources]
-#   torch = { index = "pytorch-cu121" }
-#   torchvision = { index = "pytorch-cu121" }
+# RTX 5090 / Blackwell needs a CUDA 12.8-capable PyTorch build. PyTorch's
+# official 2.8 CUDA wheel pair is torch==2.8.0 + torchvision==0.23.0 from cu128.
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+torchvision = { index = "pytorch-cu128" }

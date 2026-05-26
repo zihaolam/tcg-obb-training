@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Bootstrap a fresh RunPod pod for YOLO-OBB training. Run from training/.
+# Bootstrap a fresh RunPod pod for card detector training. Run from repo root.
 set -euo pipefail
 
-if ! command -v uv >/dev/null 2>&1; then
-    echo "installing uv..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.local/bin:$PATH"
-fi
+echo "installing/updating uv..."
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+uv --version
 
 uv sync
 
@@ -48,23 +47,32 @@ uv run python - <<'PY'
 import torch
 print(f"torch: {torch.__version__}")
 print(f"cuda available: {torch.cuda.is_available()}")
+if not torch.cuda.is_available():
+    raise SystemExit("CUDA is not available. Check that uv installed torch 2.8.0 from the cu128 index and that the pod has an NVIDIA GPU.")
 if torch.cuda.is_available():
     print(f"device: {torch.cuda.get_device_name(0)}")
+    print(f"capability: {torch.cuda.get_device_capability(0)}")
     print(f"vram: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
 PY
 
 cat <<'EOF'
 
 --- ready ---
-Next steps (run from training/):
+Next steps (run from repo root):
   1. Upload sources to data/sources/{cards,backgrounds}/
-  2. Generate dataset:
-       uv run python generate_dataset.py \
+  2. Generate pose dataset:
+       uv run python pose/generate_dataset.py \
          --cards-dir data/sources/cards \
          --backgrounds-dir data/sources/backgrounds
   3. Train:
-       uv run python train.py
-  4. Export to TFJS:
+       uv run python pose/train.py
+  4. Export:
        uv sync --extra export
-       uv run python export_tfjs.py --weights runs/obb/train/weights/best.pt
+       uv run python pose/export_model.py --weights runs/pose/train/weights/best.pt
+  5. Optional upload:
+       ./pose/upload_model.sh
+
+Legacy OBB commands are under obb/:
+  uv run python obb/generate_dataset.py
+  uv run python obb/train.py
 EOF

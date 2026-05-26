@@ -7,3 +7,4 @@ export/
 *.pt
 uv.lock
 .env
+.data

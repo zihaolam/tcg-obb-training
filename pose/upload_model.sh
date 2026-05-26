@@ -1,20 +1,15 @@
 #!/usr/bin/env bash
-# Upload all trained model artifacts to R2 under tcg-models/ptcg-detector-yolo-obb-v2/.
-# Expects `export_model.py` to have run, populating ./export/{pytorch,onnx,tfjs}.
-#
-# Layout in R2 mirrors local:
-#   tcg-models/ptcg-detector-yolo-obb-v2/pytorch/best.pt
-#   tcg-models/ptcg-detector-yolo-obb-v2/onnx/best.onnx
-#   tcg-models/ptcg-detector-yolo-obb-v2/tfjs/{model.json, *.bin}
+# Upload trained pose model artifacts to R2 under tcg-models/ptcg-detector-yolo-pose-v1/.
+# Expects `pose/export_model.py` to have run, populating ./export/pose/{pytorch,onnx}.
 set -euo pipefail
 
 REMOTE="${R2_REMOTE_NAME:-r2}"
 BUCKET="tcg-models"
-PREFIX="ptcg-detector-yolo-obb-v2"
-SRC="${1:-export}"
+PREFIX="${POSE_MODEL_PREFIX:-ptcg-detector-yolo-pose-v1}"
+SRC="${1:-export/pose}"
 
 if [ ! -d "$SRC" ]; then
-    echo "error: '${SRC}' not found. Run export_model.py first." >&2
+    echo "error: '${SRC}' not found. Run pose/export_model.py first." >&2
     exit 1
 fi
 
@@ -38,11 +33,10 @@ upload_subdir() {
 }
 
 upload_subdir "pytorch" "best.pt"
-upload_subdir "onnx"    "best.onnx"
-upload_subdir "tfjs"    "model.json"
+upload_subdir "onnx" "best.onnx"
 
 if [ "$uploaded_any" -eq 0 ]; then
-    echo "error: nothing uploaded — did export_model.py produce any output?" >&2
+    echo "error: nothing uploaded — did pose/export_model.py produce any output?" >&2
     exit 1
 fi
 
